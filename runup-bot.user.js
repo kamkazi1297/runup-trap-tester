@@ -201,12 +201,13 @@
         hit(s, c.x - 10, c.y - 6, c.w + 20, c.h * gh + 12) ||
         hit(s, c.x + c.w / 2 - 7, c.y - 12 * gh, 14, (c.h + 24) * gh);
       if (!near) continue;
+      const away = s.x < c.x + c.w / 2 ? -1 : 1;
       const owner = s.platforms.find((p) => p.id === c.owner);
       if (owner) {
         const ox = px(owner, s.time);
         if (s.x + 12 > ox && s.x - 12 < ox + owner.w) return s.x < ox + owner.w * 0.5 ? 1 : -1;
       }
-      return desired;
+      return away;
     }
     return desired;
   }
