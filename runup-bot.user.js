@@ -1,238 +1,164 @@
-(() => {
-  try { window.__rbStop && window.__rbStop(); } catch (e) {}
-  const VER = "v20";
-  const V = 420;
+(()=>{if(window.__rbStop)try{window.__rbStop()}catch(e){}
+window.__rb=24;
+const V="v24",DT=1/120,MEMES=["Doge","WIF","Fwog","Benny"];
+let S=null,I=null,H=99,P=null,hl=-1;
+const isS=v=>v&&v.platforms&&v.candles&&typeof v.alive=="boolean"&&"highestLanding"in v;
+const isI=v=>v&&typeof v.left=="boolean"&&typeof v.right=="boolean"&&!Array.isArray(v);
+function fibers(el){if(!el)return[];const o=[];for(const k of Object.keys(el))if(k.startsWith("__reactFiber")||k.startsWith("__reactContainer")||k.startsWith("__reactInternalInstance")){o.push(el[k]);if(el[k]&&el[k]._internalRoot)o.push(el[k]._internalRoot.current)}return o}
+function find(){
+  const g={},q=fibers(document.getElementById("climb-stage")).concat(fibers(document.getElementById("root"))),seen=new Set();
+  document.querySelectorAll("canvas").forEach(c=>{fibers(c).forEach(f=>q.push(f));if(c.parentElement)fibers(c.parentElement).forEach(f=>q.push(f))});
+  let n=0;while(q.length&&n++<8e3){const f=q.pop();if(!f||typeof f!="object"||seen.has(f))continue;seen.add(f);
+    let h=f.memoizedState,i=0;while(h&&i++<90){const v=h.memoizedState;if(v&&typeof v=="object"){if(isS(v)&&(!g.s||v.time>=(g.s.time||0)))g.s=v;if(isI(v))g.i=v;if(v.current&&isS(v.current)&&(!g.sr||v.current.time>=((g.sr.current&&g.sr.current.time)||0)))g.sr=v;if(v.current&&isI(v.current))g.ir=v}h=h.next}
+    if(f.return)q.push(f.return);if(f.child)q.push(f.child);if(f.sibling)q.push(f.sibling)}
+  S=g.sr||(g.s?{current:g.s}:S);I=g.ir||(g.i?{current:g.i}:I);
+}
+function key(t,c,k){const e=new KeyboardEvent(t,{key:c,code:c,keyCode:k,which:k,bubbles:!0,cancelable:!0});window.dispatchEvent(e);document.dispatchEvent(e);const st=document.getElementById("climb-stage");if(st)st.dispatchEvent(e)}
+function dirHold(d){if(I&&I.current){I.current.left=d===-1;I.current.right=d===1}if(d!==H){if(H<0)key("keyup","ArrowLeft",37);if(H>0)key("keyup","ArrowRight",39);H=d}if(d<0)key("keydown","ArrowLeft",37);if(d>0)key("keydown","ArrowRight",39)}
+function tapBoost(s){if(!s||!s.boost||!s.alive)return;s.vy=Math.max(s.vy,650);s.boost=!1;s.boostFlash=.3;key("keydown"," ",32);key("keydown","Space",32);setTimeout(()=>{key("keyup"," ",32);key("keyup","Space",32)},40)}
 
-  function gone(p, s) { return !!(p.gone || (p.crackedAt != null && s.time - p.crackedAt > 0.65)); }
-  function platX(p, t) { return p.kind === "moving" ? (p.homeX ?? p.x) + Math.sin(t * 1.5 + p.id) * 17 : p.x; }
-  function mains(s) {
-    const minY = Math.min(s.highestLanding, s.y) + 1;
-    return s.platforms.filter(p => !p.green && !p.risk && !gone(p, s) && p.y > minY).sort((a, b) => a.y - b.y);
+function phaseOf(t){if(t<24)return"calm";const u=(t-24)%64;return u<8?"bull":u<30?"calm":u<32?"rug-warning":u<38?"rug":"calm"}
+function rng(st){st.seed=Math.imul(st.seed,1664525)+1013904223>>>0;return st.seed/4294967296}
+function generate(st){
+  while(st.generatedY<st.camera+st.viewHeight+180){
+    const id=st.nextId++,w=Math.max(98,130-id*.6),prev=st.generatedX>160?1:-1,side=id%6===0?prev:-prev;
+    const x=side>0?232+rng(st)*14:38+rng(st)*20,y=st.generatedY+94+rng(st)*10;
+    const kind=id>=8&&id%8===0?"moving":id>=12&&id%8===4?"crumble":undefined;
+    st.platforms.push({id,x,homeX:x,y,w,green:false,kind});
+    if(id>=2&&id%8===2){const gx=x>155?42:292,meme=id>=10&&id%16===10?MEMES[Math.floor((id-10)/16)%4]:undefined;st.platforms.push({id:-id,x:gx,y:y+23,w:82,green:true,risk:true,meme})}
+    if(id>=6&&id%8===6)st.candles.push({x:side>0?x+3:x+w-25,y:y-58,w:22,h:78,owner:id});
+    const ben=st.platforms.find(p=>p.id===-id&&p.meme==="Benny");
+    if(ben)st.candles.push({x:ben.x+25,y:ben.y-50,w:20,h:70,owner:ben.id});
+    st.generatedY=y;st.generatedX=x;
   }
-  function candleOf(s, p) { return p && s.candles.find(c => c.owner === p.id); }
-  function growth(c, t) {
-    if (!c || c.started === undefined) return 0;
-    const o = (t - c.started) % 3.3;
-    if (o < 0.9 || o >= 2.2) return 0;
-    if (o < 1.18) return (o - 0.9) / 0.28;
-    if (o < 1.85) return 1;
-    return 1 - (o - 1.85) / 0.35;
+  st.platforms=st.platforms.filter(p=>p.y>st.camera-110);
+  st.candles=st.candles.filter(c=>c.y+c.h>st.camera-110);
+}
+function cphase(c,t){if(c.started===undefined)return 0;const o=(t-c.started)%3.3;return o<.9||o>=2.2?0:o<1.18?(o-.9)/.28:o<1.85?1:1-(o-1.85)/.35}
+function gone(p,st){return !!(p.gone||(p.crackedAt!==undefined&&st.time-p.crackedAt>.65))}
+function dia(p){return p.x+p.w*(p.meme?.74:.5)}
+function body(p,t){const o=(t+Math.abs(p.id)*.19)%2.6,hop=p.meme==="Fwog"?Math.max(0,Math.sin(o/2.6*Math.PI*2)):0,dog=p.meme==="Doge"?Math.sin(t*1.8+p.id)*7:0;return{x:p.x+5+hop*17+dog,y:p.y+hop*37,w:27,h:29}}
+function hat(p,t){if(p.meme!=="WIF")return null;const o=(t+Math.abs(p.id)*.13)%3.6;if(o<1.2||o>2.7)return null;const i=(o-1.2)/1.5,d=p.x>210?-1:1;return{x:p.x+10+d*i*90,y:p.y+40+Math.sin(i*Math.PI)*30,w:25,h:15}}
+function hits(st,x,y,w,h){return st.x+12>x&&st.x-12<x+w&&st.y+37>y&&st.y+3<y+h}
+function clone(st){return{...st,platforms:st.platforms.map(p=>({...p})),candles:st.candles.map(c=>({...c}))}}
+function tick(st,dir,doB){
+  if(!st.alive)return;
+  if(doB&&st.boost){st.vy=Math.max(st.vy,650);st.boost=false}
+  const y0=st.y,ph0=phaseOf(st.time);
+  st.time+=DT;const ph=phaseOf(st.time);
+  if(ph==="rug-warning")for(const p of st.platforms)if(p.risk&&Math.abs(p.id)%2===0&&p.y>=st.camera&&p.y<=st.camera+st.viewHeight)p.rugWarnedAt??=st.time;
+  if(ph==="rug"&&ph0!=="rug")for(const p of st.platforms)if(p.risk&&Math.abs(p.id)%2===0&&p.rugWarnedAt!==undefined&&st.time-p.rugWarnedAt>=.9)p.gone=true;
+  if(ph==="calm"&&ph0==="rug")for(const p of st.platforms)p.rugWarnedAt=undefined;
+  for(const p of st.platforms)if(p.kind==="moving")p.x=(p.homeX??p.x)+Math.sin(st.time*1.5+p.id)*17;
+  for(const c of st.candles)if(c.started===undefined&&st.y>c.y-155&&st.y<c.y+c.h+75)c.started=st.time;
+  st.x=Math.max(19,Math.min(401,st.x+dir*255*DT));if(dir)st.facing=dir;
+  st.vy-=1700*DT;st.y+=st.vy*DT;
+  for(const c of st.candles){const g=cphase(c,st.time);if(g>.02&&(hits(st,c.x,c.y,c.w,c.h*g)||hits(st,c.x+c.w/2-3,c.y-9*g,6,(c.h+23)*g))){st.alive=false;st.reason="candle";return}}
+  for(const p of st.platforms)if(!gone(p,st)&&p.meme){const b=body(p,st.time),h=hat(p,st.time);if(hits(st,b.x,b.y,b.w,b.h)||(h&&hits(st,h.x,h.y,h.w,h.h))){st.alive=false;st.reason=h&&hits(st,h.x,h.y,h.w,h.h)?"hat":p.meme;return}}
+  const land=st.vy<0?st.platforms.filter(p=>!gone(p,st)&&y0>=p.y&&st.y<=p.y&&st.x+11>p.x&&st.x-11<p.x+p.w).sort((a,b)=>b.y-a.y)[0]:undefined;
+  if(land){const perfect=land.y>st.highestLanding+1&&Math.abs(st.x-dia(land))<=12;st.combo=perfect?st.combo+1:0;st.bestCombo=Math.max(st.bestCombo,st.combo);st.highestLanding=Math.max(st.highestLanding,land.y);const sup=perfect&&st.combo%5===0;st.y=land.y;st.vy=sup?1060:land.green?875:ph==="bull"?760:640;st.boost=true;st.landings++;if(land.kind==="crumble")land.crackedAt??=st.time;if(sup)st.supers++;st._landed=land}else st._landed=null;
+  st.peak=Math.max(st.peak,st.y);st.camera=Math.max(st.camera,st.y-st.viewHeight*.48);
+  if(st.time>40){st.floor=Math.max(st.floor+(18+Math.min(16,st.time*.08))*DT,st.camera-110);if(st.y<st.floor){st.alive=false;st.reason="floor";return}}
+  if(st.y+50<st.camera){st.alive=false;st.reason="miss";return}
+  generate(st);
+}
+function px(p,t){return p.kind==="moving"?(p.homeX??p.x)+Math.sin(t*1.5+p.id)*17:p.x}
+function safeAims(st,p){
+  const x=px(p,st.time),w=p.w,c=st.candles.find(z=>z.owner===p.id);
+  let lo=x+16,hi=x+w-16,aims=[],walls=[];
+  if(c)walls.push([c.x-14,c.x+c.w+14]);
+  for(const k of st.candles){
+    if(k.owner===p.id)continue;
+    const owner=st.platforms.find(z=>z.id===k.owner); if(!owner)continue;
+    if(owner.y<p.y-20||owner.y>p.y+140)continue;
+    walls.push([k.x-14,k.x+k.w+14]);
   }
-  function memeBox(p, t) {
-    const o = (t + Math.abs(p.id) * 0.19) % 2.6;
-    const hop = p.meme === "Fwog" ? Math.max(0, Math.sin((o / 2.6) * Math.PI * 2)) : 0;
-    const sway = p.meme === "Doge" ? Math.sin(t * 1.8 + p.id) * 7 : 0;
-    return { x: p.x + 5 + hop * 17 + sway, y: p.y + hop * 37, w: 27, h: 29 };
-  }
-  function hatBox(p, t) {
-    if (p.meme !== "WIF") return null;
-    const o = (t + Math.abs(p.id) * 0.13) % 3.6;
-    if (o < 1.2 || o > 2.7) return null;
-    const i = (o - 1.2) / 1.5, d = p.x > V / 2 ? -1 : 1;
-    return { x: p.x + 10 + d * i * 90, y: p.y + 40 + Math.sin(i * Math.PI) * 30, w: 25, h: 15 };
-  }
-  function box(x, y, bx, by, bw, bh) {
-    return x + 12 > bx && x - 12 < bx + bw && y + 37 > by && y + 3 < by + bh;
-  }
-  function hatsNow(s, t) {
-    const o = [];
-    for (const p of s.platforms) { const h = hatBox(p, t); if (h) o.push(h); }
-    return o;
-  }
-  function aimX(s, p) {
-    const x = platX(p, s.time);
-    let lo = x + 16, hi = x + p.w - 16;
-    for (const c of s.candles) {
-      const own = s.platforms.find(q => q.id === c.owner);
-      const onThis = c.owner === p.id;
-      const hangs = own && !own.green && own.y > p.y && own.y < p.y + 130 && Math.abs(platX(own, s.time) - x) < 90;
-      if (!onThis && !hangs) continue;
-      if (c.x + c.w / 2 < x + p.w * 0.5) lo = Math.max(lo, c.x + c.w + 30);
-      else hi = Math.min(hi, c.x - 30);
+  let segs=[[lo,hi]];
+  for(const [wl,wr] of walls){
+    const next=[];
+    for(const [a,b] of segs){
+      if(b<wl||a>wr)next.push([a,b]);
+      else{if(a<wl)next.push([a,Math.min(b,wl)]);if(b>wr)next.push([Math.max(a,wr),b])}
     }
-    for (const g of s.platforms) {
-      if (!g.green || gone(g, s)) continue;
-      if (g.y < p.y - 30 || g.y > p.y + 90) continue;
-      if (g.x > x) hi = Math.min(hi, g.x - 18);
-      else lo = Math.max(lo, g.x + g.w + 18);
+    segs=next.filter(s=>s[1]-s[0]>=10);
+  }
+  for(const [a,b] of segs){aims.push((a+b)/2);if(b-a>20){aims.push(a+6);aims.push(b-6)}}
+  if(!aims.length)aims.push(c&&c.x<x+w*.5?x+w-18:x+18,x+w*.5);
+  return[...new Set(aims.map(v=>Math.round(Math.max(22,Math.min(398,v)))))];
+}
+function simJump(st,aim,useB){
+  const s=clone(st),hl=s.highestLanding;let used=0;
+  for(let i=0;i<260;i++){
+    const d=s.x<aim-5?1:s.x>aim+5?-1:0;
+    const doB=useB&&!used&&s.boost&&s.vy<90; if(doB)used=1;
+    tick(s,d,doB);
+    if(!s.alive)return{ok:0,reason:s.reason,s,y:s.y};
+    if(s._landed&&s._landed.y>hl+1){
+      if(s._landed.green)return{ok:0,reason:"green",s,y:s.y};
+      return{ok:1,reason:"ok",s,land:s._landed,y:s.y};
     }
-    const nxt = mains(s).find(q => q.y > p.y + 1);
-    let want = x + p.w * 0.5;
-    if (nxt) want = platX(nxt, s.time) > x ? x + p.w - 22 : x + 22;
-    if (hi < lo) {
-      const c = candleOf(s, p);
-      return c && c.x < x + p.w * 0.5 ? x + p.w - 12 : x + 12;
+  }
+  return{ok:0,reason:"air",s,y:s.y};
+}
+function nextOk(st){
+  const L=st.platforms.filter(p=>!p.green&&!gone(p,st)&&p.y>st.highestLanding+1).sort((a,b)=>a.y-b.y);
+  for(let i=0;i<Math.min(2,L.length);i++){
+    for(const aim of safeAims(st,L[i]).slice(0,3)){
+      for(const b of[0,1]){if(simJump(st,aim,!!b).ok)return 1}
     }
-    return Math.max(lo, Math.min(hi, want));
   }
-  function plan(s) {
-    const L = mains(s), n = L[0], n2 = L[1];
-    if (!n) return { x: s.x, b: 0, tag: "-" };
-    const from = s.platforms.find(p => !p.green && Math.abs(p.y - s.highestLanding) < 2);
-    const curR = (from ? platX(from, s.time) : s.x) > 160;
-    const nR = platX(n, s.time) > 160;
-    const c = candleOf(s, n);
-    const onCr = s.platforms.some(p => p.kind === "crumble" && p.crackedAt != null && !p.green && Math.abs(p.y - s.highestLanding) < 2);
-    const skip = n2 && ((c && nR !== curR) || onCr || n.kind === "crumble");
-    const T = skip ? n2 : n;
-    const far = Math.abs(aimX(s, n) - s.x) > 145;
-    return { x: aimX(s, T), b: skip || far ? 1 : 0, tag: (skip ? "S" : "L") + T.id };
-  }
-  function flameAt(s, x, y) {
-    for (const c of s.candles) {
-      const g = growth(c, s.time);
-      if (g > 0.02 && (box(x, y, c.x, c.y, c.w, c.h * g) || box(x, y, c.x + c.w / 2 - 3, c.y - 9 * g, 6, (c.h + 23) * g))) return c;
-    }
-    return null;
-  }
-
-  function isState(v) {
-    return v && Array.isArray(v.platforms) && Array.isArray(v.candles) && typeof v.alive === "boolean" && typeof v.x === "number" && "highestLanding" in v && "seed" in v;
-  }
-  function isInput(v) {
-    return v && typeof v.left === "boolean" && typeof v.right === "boolean" && !Array.isArray(v) && Object.keys(v).every(k => k === "left" || k === "right");
-  }
-  function fibers(el) {
-    if (!el) return [];
-    const o = [];
-    for (const k of Object.keys(el)) {
-      if (k.startsWith("__reactFiber") || k.startsWith("__reactContainer") || k.startsWith("__reactInternalInstance")) {
-        o.push(el[k]);
-        if (el[k] && el[k]._internalRoot) o.push(el[k]._internalRoot.current);
+  return 0;
+}
+function think(st){
+  const L=st.platforms.filter(p=>!p.green&&!gone(p,st)&&p.y>st.highestLanding+1).sort((a,b)=>a.y-b.y);
+  let best=null;
+  const cur=st.platforms.find(p=>!p.green&&Math.abs(p.y-st.highestLanding)<3);
+  const crumbling=!!(cur&&cur.kind==="crumble");
+  for(let i=0;i<Math.min(3,L.length);i++){
+    const p=L[i]; if(crumbling&&p===cur)continue;
+    for(const aim of safeAims(st,p)){
+      for(const b of[0,1]){
+        const r=simJump(st,aim,!!b);
+        const nxt=r.ok&&nextOk(r.s)?1:0;
+        const sc=(r.ok?1e7:0)+nxt*5e6+(r.land?r.land.y:0)*10+r.y-i*300-(b?20:0)-(r.reason==="candle"||r.reason==="hat"?3e6:0);
+        if(!best||sc>best.sc)best={sc,aim,b:!!b,id:p.id,ok:r.ok,nxt,reason:r.reason};
+        if(r.ok&&nxt&&i===0&&!b)return{aim,b:false,id:p.id,ok:1,nxt:1,reason:"ok"};
       }
     }
-    return o;
+    if(best&&best.ok&&best.nxt&&i===0)return best;
   }
-  let stateRef = null, inputRef = null;
-  function find() {
-    const q = fibers(document.getElementById("climb-stage")).concat(fibers(document.getElementById("root")));
-    document.querySelectorAll("#climb-stage canvas, #climb-stage *").forEach(el => fibers(el).forEach(f => q.push(f)));
-    const seen = new Set();
-    let snap = null, inp = null, refS = null, refI = null, n = 0;
-    while (q.length && n++ < 9000) {
-      const f = q.pop();
-      if (!f || typeof f !== "object" || seen.has(f)) continue;
-      seen.add(f);
-      let h = f.memoizedState, i = 0;
-      while (h && i++ < 100) {
-        const v = h.memoizedState;
-        if (v && typeof v === "object") {
-          if (isState(v) && (!snap || v.time >= (snap.time || 0))) snap = v;
-          if (isInput(v)) inp = v;
-          if (v.current && isState(v.current) && (!refS || v.current.time >= ((refS.current && refS.current.time) || 0))) refS = v;
-          if (v.current && isInput(v.current)) refI = v;
-        }
-        h = h.next;
-      }
-      if (f.return) q.push(f.return);
-      if (f.child) q.push(f.child);
-      if (f.sibling) q.push(f.sibling);
-    }
-    stateRef = refS || (snap ? { current: snap } : stateRef);
-    inputRef = refI || (inp ? { current: inp } : inputRef);
-  }
-
-  let held = 99;
-  function sendKey(type, code, keyCode) {
-    const ev = new KeyboardEvent(type, { key: code === "Space" ? " " : code, code, keyCode, which: keyCode, bubbles: true, cancelable: true });
-    window.dispatchEvent(ev);
-    document.dispatchEvent(ev);
-    const st = document.getElementById("climb-stage");
-    if (st) st.dispatchEvent(ev);
-  }
-  function hold(dir) {
-    if (inputRef && inputRef.current) {
-      inputRef.current.left = dir === -1;
-      inputRef.current.right = dir === 1;
-    }
-    if (dir === held) return;
-    if (held < 0) sendKey("keyup", "ArrowLeft", 37);
-    if (held > 0) sendKey("keyup", "ArrowRight", 39);
-    held = dir;
-    if (dir < 0) sendKey("keydown", "ArrowLeft", 37);
-    if (dir > 0) sendKey("keydown", "ArrowRight", 39);
-    const l = document.querySelector('[aria-label="Move left"]');
-    const r = document.querySelector('[aria-label="Move right"]');
-    const fire = (b, t) => b && b.dispatchEvent(new PointerEvent(t, { bubbles: true, pointerId: 1 }));
-    fire(l, "pointerup"); fire(r, "pointerup");
-    if (dir < 0) fire(l, "pointerdown");
-    if (dir > 0) fire(r, "pointerdown");
-  }
-  function doBoost(s) {
-    if (!s.boost || s.vy >= 180) return;
-    s.vy = Math.max(s.vy, 650);
-    s.boost = false;
-    s.boostFlash = 0.3;
-    sendKey("keydown", "Space", 32);
-    sendKey("keyup", "Space", 32);
-    document.querySelectorAll("button").forEach(btn => {
-      if (/boost|space/i.test(btn.textContent || "") || btn.getAttribute("aria-label") === "Boost")
-        btn.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, pointerId: 1 }));
-    });
-  }
-
-  const bar = document.createElement("div");
-  bar.id = "rbbar";
-  bar.style.cssText = "position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:2147483647;background:#7CFFB2;color:#111;padding:8px 14px;border-radius:12px;font:800 13px Inter,sans-serif;white-space:nowrap;cursor:pointer";
-  bar.textContent = VER + " ON â€” click the mountain, then Start";
-  document.body.appendChild(bar);
-
-  let locked = null, lastLand = -1;
-  const id = setInterval(() => {
-    const rs = document.querySelector('[aria-label="Resume game"]');
-    if (rs) rs.click();
-    const st = document.getElementById("climb-stage");
-    if (st && document.activeElement !== st) { try { st.focus({ preventScroll: true }); } catch (e) {} }
-    find();
-    if (!stateRef || !stateRef.current) {
-      bar.textContent = VER + " waiting â€” click the mountain";
-      bar.style.background = "#ffe085";
-      return;
-    }
-    const s = stateRef.current;
-    if (!s.alive || s.time < 0.05) {
-      hold(0);
-      locked = null;
-      bar.style.background = "#ffe085";
-      bar.textContent = VER + (s.alive ? " press Start" : " dead " + Math.max(0, Math.floor((s.peak - 80) * 3)) + "m " + (s.reason || ""));
-      return;
-    }
-    if (!locked || s.landings !== lastLand) {
-      locked = plan(s);
-      lastLand = s.landings;
-    }
-    let d = s.x < locked.x - 5 ? 1 : s.x > locked.x + 5 ? -1 : s.x <= locked.x ? 1 : -1;
-    const fl = flameAt(s, s.x, s.y);
-    if (fl) d = s.x < fl.x + fl.w / 2 ? -1 : 1;
-    for (const h of hatsNow(s, s.time)) {
-      if (box(s.x, s.y, h.x, h.y, h.w, h.h) || box(s.x + d * 14, s.y + 8, h.x, h.y, h.w, h.h))
-        d = s.x < h.x + h.w / 2 ? -1 : 1;
-    }
-    for (const p of s.platforms) {
-      if (!p.meme || gone(p, s)) continue;
-      const m = memeBox(p, s.time);
-      if (box(s.x, s.y, m.x, m.y, m.w, m.h)) d = s.x < m.x + m.w / 2 ? -1 : 1;
-    }
-    if (s.vy < 0) {
-      for (const p of s.platforms) {
-        if (!p.green || gone(p, s)) continue;
-        if (s.y > p.y && s.y < p.y + 70 && s.x + 12 > p.x && s.x - 12 < p.x + p.w)
-          d = (s.x - p.x) < (p.x + p.w - s.x) ? -1 : 1;
-      }
-    }
-    hold(d);
-    if (locked.b) doBoost(s);
-    const hat = hatsNow(s, s.time).length;
-    bar.style.background = hat ? "#ff8aa0" : "#7CFFB2";
-    bar.textContent = VER + " " + locked.tag + " " + (d > 0 ? ">" : "<") + (locked.b ? " B" : "") + (hat ? " HAT" : "") + "  " + Math.max(0, Math.floor((s.peak - 80) * 3)) + "m";
-  }, 8);
-
-  window.__rbStop = () => {
-    clearInterval(id);
-    hold(0);
-    bar.remove();
-    window.__rbStop = null;
+  return best||{aim:st.x,b:false,id:"?",ok:0,nxt:0,reason:"none"};
+}
+function snap(s){
+  return{
+    viewHeight:s.viewHeight,x:s.x,y:s.y,vy:s.vy,facing:s.facing,camera:s.camera,peak:s.peak,boost:s.boost,alive:s.alive,reason:s.reason||"",
+    platforms:s.platforms.map(p=>({id:p.id,x:p.x,homeX:p.homeX,y:p.y,w:p.w,green:!!p.green,kind:p.kind,risk:p.risk,meme:p.meme,gone:p.gone,crackedAt:p.crackedAt,rugWarnedAt:p.rugWarnedAt})),
+    candles:s.candles.map(c=>({x:c.x,y:c.y,w:c.w,h:c.h,owner:c.owner,started:c.started})),
+    seed:s.seed,nextId:s.nextId,time:s.time,landings:s.landings,generatedX:s.generatedX,generatedY:s.generatedY,
+    combo:s.combo,bestCombo:s.bestCombo,highestLanding:s.highestLanding,supers:s.supers,floor:s.floor,_landed:null
   };
-  bar.ondblclick = () => window.__rbStop && window.__rbStop();
-  alert(VER + " ON â€” click the mountain, then Start. Double-click the bar to stop.");
+}
+
+const bar=document.createElement("div");
+bar.id="rbbar";
+bar.style.cssText="position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:2147483647;background:#7CFFB2;color:#111;padding:10px 16px;border-radius:12px;font:800 14px sans-serif;cursor:pointer";
+bar.textContent=V+" ON â€” click mountain, then Start";
+bar.ondblclick=()=>window.__rbStop&&window.__rbStop();
+document.body.appendChild(bar);
+const id=setInterval(()=>{
+  const rs=document.querySelector('[aria-label="Resume game"]'); if(rs)rs.click();
+  find();
+  if(!S||!S.current){bar.textContent=V+" click the mountain";return}
+  const s=S.current;
+  if(!s.alive||s.time<.05){dirHold(0);P=null;hl=-1;bar.textContent=V+" press Start  "+Math.max(0,Math.floor((s.peak-80)*3))+"m";bar.style.background="#ffe085";return}
+  if(!P||s.highestLanding>hl+1){hl=s.highestLanding;P=think(snap(s))}
+  const d=s.x<P.aim-6?1:s.x>P.aim+6?-1:0;
+  dirHold(d);
+  if(P.b&&s.boost&&s.vy<90){tapBoost(s);P.b=false}
+  bar.style.background=P.ok?"#7CFFB2":"#ffd36a";
+  bar.textContent=V+" L"+P.id+(P.ok?"":"!")+(P.nxt?"":"?")+" "+(d>0?">":d<0?"<":".")+(P.b?" B":"")+"  "+Math.max(0,Math.floor((s.peak-80)*3))+"m";
+},8);
+window.__rbStop=()=>{clearInterval(id);dirHold(0);bar.remove();window.__rbStop=null;window.__rb=0};
+window.addEventListener("keydown",e=>{if(e.code==="F2"&&window.__rbStop)window.__rbStop()});
+alert(V+" ON");
 })();
