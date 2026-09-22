@@ -1,6 +1,6 @@
 (()=>{if(window.__rbStop)try{window.__rbStop()}catch(e){}
-window.__rb=25;
-const V="v25",DT=1/120,MEMES=["Doge","WIF","Fwog","Benny"];
+window.__rb=26;
+const V="v26",DT=1/120,MEMES=["Doge","WIF","Fwog","Benny"];
 let S=null,I=null,H=99,P=null,hl=-1;
 const isS=v=>v&&v.platforms&&v.candles&&typeof v.alive=="boolean"&&"highestLanding"in v;
 const isI=v=>v&&typeof v.left=="boolean"&&typeof v.right=="boolean"&&!Array.isArray(v);
@@ -136,14 +136,19 @@ function think(st){
   const L=st.platforms.filter(p=>!p.green&&!gone(p,st)&&p.y>st.highestLanding+1).sort((a,b)=>a.y-b.y);
   let best=null,bestN=null;
   const cur=st.platforms.find(p=>!p.green&&Math.abs(p.y-st.highestLanding)<3);
-  const crumbling=!!(cur&&cur.kind==="crumble");
+  const crumbling=!!(cur&&(cur.kind==="crumble"||cur.crackedAt!==undefined));
   const cx=cur?px(cur,st.time):st.x;
+  const opp=L.find(p=>cur&&(px(p,st.time)>160)!==(cx>160));
   for(let i=0;i<Math.min(3,L.length);i++){
     const p=L[i]; if(crumbling&&p===cur)continue;
     const same=cur?((px(p,st.time)>160)===(cx>160)):false;
+    if(crumbling&&same&&!opp){ /* no opposite rock — UP only if it actually lands */ }
     for(const aim of safeAims(st,p)){
       for(const b of[0,1]){
         const r=simJump(st,aim,!!b);
+        const landedHere=!!(r.ok&&r.land&&r.land.id===p.id);
+        if(crumbling&&!landedHere) continue;
+        if(crumbling&&same&&opp&&!landedHere) continue;
         const nxt=r.ok&&nextOk(r.s)?1:0;
         const sc=(r.ok?1e7:0)+nxt*8e6+(same?6e5:0)+(r.land?r.land.y:0)*8+r.y-i*50-(b?25:0);
         const row={sc,aim,b:!!b,id:p.id,ok:r.ok,nxt,reason:r.reason,same};
