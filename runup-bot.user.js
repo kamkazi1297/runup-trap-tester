@@ -1,6 +1,6 @@
 (()=>{if(window.__rbStop)try{window.__rbStop()}catch(e){}
-window.__rb=24;
-const V="v24",DT=1/120,MEMES=["Doge","WIF","Fwog","Benny"];
+window.__rb=25;
+const V="v25",DT=1/120,MEMES=["Doge","WIF","Fwog","Benny"];
 let S=null,I=null,H=99,P=null,hl=-1;
 const isS=v=>v&&v.platforms&&v.candles&&typeof v.alive=="boolean"&&"highestLanding"in v;
 const isI=v=>v&&typeof v.left=="boolean"&&typeof v.right=="boolean"&&!Array.isArray(v);
@@ -16,7 +16,6 @@ function find(){
 function key(t,c,k){const e=new KeyboardEvent(t,{key:c,code:c,keyCode:k,which:k,bubbles:!0,cancelable:!0});window.dispatchEvent(e);document.dispatchEvent(e);const st=document.getElementById("climb-stage");if(st)st.dispatchEvent(e)}
 function dirHold(d){if(I&&I.current){I.current.left=d===-1;I.current.right=d===1}if(d!==H){if(H<0)key("keyup","ArrowLeft",37);if(H>0)key("keyup","ArrowRight",39);H=d}if(d<0)key("keydown","ArrowLeft",37);if(d>0)key("keydown","ArrowRight",39)}
 function tapBoost(s){if(!s||!s.boost||!s.alive)return;s.vy=Math.max(s.vy,650);s.boost=!1;s.boostFlash=.3;key("keydown"," ",32);key("keydown","Space",32);setTimeout(()=>{key("keyup"," ",32);key("keyup","Space",32)},40)}
-
 function phaseOf(t){if(t<24)return"calm";const u=(t-24)%64;return u<8?"bull":u<30?"calm":u<32?"rug-warning":u<38?"rug":"calm"}
 function rng(st){st.seed=Math.imul(st.seed,1664525)+1013904223>>>0;return st.seed/4294967296}
 function generate(st){
@@ -63,15 +62,39 @@ function tick(st,dir,doB){
   generate(st);
 }
 function px(p,t){return p.kind==="moving"?(p.homeX??p.x)+Math.sin(t*1.5+p.id)*17:p.x}
+function flee(s){
+  for(const c of s.candles){
+    const g=cphase(c,s.time); if(g<.02) continue;
+    if(s.y+37<c.y-8||s.y+3>c.y+c.h*g+8) continue;
+    if(s.x+16>c.x-10&&s.x-16<c.x+c.w+10) return s.x<c.x+c.w/2?-1:1;
+  }
+  for(const p of s.platforms)if(!gone(p,s)&&p.meme){
+    const b=body(p,s.time),h=hat(p,s.time);
+    const boxes=[b]; if(h) boxes.push(h);
+    if(p.meme==="Fwog") boxes.push({x:p.x+5,y:p.y,w:44,h:66});
+    for(const w of boxes){
+      if(s.y+37<w.y-4||s.y+3>w.y+w.h+4) continue;
+      if(s.x+14>w.x-8&&s.x-14<w.x+w.w+8) return s.x<w.x+w.w/2?-1:1;
+    }
+  }
+  return 0;
+}
+function steer(s,aim){const f=flee(s); if(f) return f; return s.x<aim-5?1:s.x>aim+5?-1:0}
 function safeAims(st,p){
   const x=px(p,st.time),w=p.w,c=st.candles.find(z=>z.owner===p.id);
   let lo=x+16,hi=x+w-16,aims=[],walls=[];
-  if(c)walls.push([c.x-14,c.x+c.w+14]);
+  if(c)walls.push([c.x-16,c.x+c.w+16]);
   for(const k of st.candles){
     if(k.owner===p.id)continue;
     const owner=st.platforms.find(z=>z.id===k.owner); if(!owner)continue;
     if(owner.y<p.y-20||owner.y>p.y+140)continue;
     walls.push([k.x-14,k.x+k.w+14]);
+  }
+  for(const g of st.platforms){
+    if(!g.green||!g.meme||gone(g,st))continue;
+    if(Math.abs(g.y-p.y)>80)continue;
+    const b=body(g,st.time); walls.push([b.x-8,b.x+b.w+8]);
+    if(g.meme==="WIF"){const d=g.x>210?-1:1,x0=g.x+10,x1=g.x+10+d*90;walls.push([Math.min(x0,x1)-2,Math.max(x0,x1)+27]);}
   }
   let segs=[[lo,hi]];
   for(const [wl,wr] of walls){
@@ -80,20 +103,20 @@ function safeAims(st,p){
       if(b<wl||a>wr)next.push([a,b]);
       else{if(a<wl)next.push([a,Math.min(b,wl)]);if(b>wr)next.push([Math.max(a,wr),b])}
     }
-    segs=next.filter(s=>s[1]-s[0]>=10);
+    segs=next.filter(s=>s[1]-s[0]>=12);
   }
-  for(const [a,b] of segs){aims.push((a+b)/2);if(b-a>20){aims.push(a+6);aims.push(b-6)}}
-  if(!aims.length)aims.push(c&&c.x<x+w*.5?x+w-18:x+18,x+w*.5);
+  for(const [a,b] of segs){aims.push((a+b)/2);if(b-a>18){aims.push(a+7);aims.push(b-7)}}
+  if(!aims.length)aims.push(c&&c.x<x+w*.5?x+w-20:x+20);
   return[...new Set(aims.map(v=>Math.round(Math.max(22,Math.min(398,v)))))];
 }
 function simJump(st,aim,useB){
-  const s=clone(st),hl=s.highestLanding;let used=0;
+  const s=clone(st),hl0=s.highestLanding;let used=0;
   for(let i=0;i<260;i++){
-    const d=s.x<aim-5?1:s.x>aim+5?-1:0;
+    const d=steer(s,aim);
     const doB=useB&&!used&&s.boost&&s.vy<90; if(doB)used=1;
     tick(s,d,doB);
     if(!s.alive)return{ok:0,reason:s.reason,s,y:s.y};
-    if(s._landed&&s._landed.y>hl+1){
+    if(s._landed&&s._landed.y>hl0+1){
       if(s._landed.green)return{ok:0,reason:"green",s,y:s.y};
       return{ok:1,reason:"ok",s,land:s._landed,y:s.y};
     }
@@ -103,7 +126,7 @@ function simJump(st,aim,useB){
 function nextOk(st){
   const L=st.platforms.filter(p=>!p.green&&!gone(p,st)&&p.y>st.highestLanding+1).sort((a,b)=>a.y-b.y);
   for(let i=0;i<Math.min(2,L.length);i++){
-    for(const aim of safeAims(st,L[i]).slice(0,3)){
+    for(const aim of safeAims(st,L[i]).slice(0,2)){
       for(const b of[0,1]){if(simJump(st,aim,!!b).ok)return 1}
     }
   }
@@ -111,23 +134,25 @@ function nextOk(st){
 }
 function think(st){
   const L=st.platforms.filter(p=>!p.green&&!gone(p,st)&&p.y>st.highestLanding+1).sort((a,b)=>a.y-b.y);
-  let best=null;
+  let best=null,bestN=null;
   const cur=st.platforms.find(p=>!p.green&&Math.abs(p.y-st.highestLanding)<3);
   const crumbling=!!(cur&&cur.kind==="crumble");
+  const cx=cur?px(cur,st.time):st.x;
   for(let i=0;i<Math.min(3,L.length);i++){
     const p=L[i]; if(crumbling&&p===cur)continue;
+    const same=cur?((px(p,st.time)>160)===(cx>160)):false;
     for(const aim of safeAims(st,p)){
       for(const b of[0,1]){
         const r=simJump(st,aim,!!b);
         const nxt=r.ok&&nextOk(r.s)?1:0;
-        const sc=(r.ok?1e7:0)+nxt*5e6+(r.land?r.land.y:0)*10+r.y-i*300-(b?20:0)-(r.reason==="candle"||r.reason==="hat"?3e6:0);
-        if(!best||sc>best.sc)best={sc,aim,b:!!b,id:p.id,ok:r.ok,nxt,reason:r.reason};
-        if(r.ok&&nxt&&i===0&&!b)return{aim,b:false,id:p.id,ok:1,nxt:1,reason:"ok"};
+        const sc=(r.ok?1e7:0)+nxt*8e6+(same?6e5:0)+(r.land?r.land.y:0)*8+r.y-i*50-(b?25:0);
+        const row={sc,aim,b:!!b,id:p.id,ok:r.ok,nxt,reason:r.reason,same};
+        if(!best||sc>best.sc)best=row;
+        if(r.ok&&nxt&&(!bestN||sc>bestN.sc))bestN=row;
       }
     }
-    if(best&&best.ok&&best.nxt&&i===0)return best;
   }
-  return best||{aim:st.x,b:false,id:"?",ok:0,nxt:0,reason:"none"};
+  return bestN||best||{aim:st.x,b:false,id:"?",ok:0,nxt:0,reason:"none"};
 }
 function snap(s){
   return{
@@ -137,6 +162,28 @@ function snap(s){
     seed:s.seed,nextId:s.nextId,time:s.time,landings:s.landings,generatedX:s.generatedX,generatedY:s.generatedY,
     combo:s.combo,bestCombo:s.bestCombo,highestLanding:s.highestLanding,supers:s.supers,floor:s.floor,_landed:null
   };
+}
+function overlay(s){
+  const st=document.getElementById("climb-stage"); if(!st)return;
+  let ov=document.getElementById("rbov");
+  if(!ov){ov=document.createElement("canvas");ov.id="rbov";ov.style.cssText="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:50";st.appendChild(ov)}
+  const h=s.viewHeight||680; if(ov.width!==420||ov.height!==h){ov.width=420;ov.height=h}
+  const g=ov.getContext("2d"),Y=y=>h-y+s.camera;
+  g.clearRect(0,0,420,h);
+  for(const c of s.candles){
+    const ph=cphase(c,s.time);
+    g.fillStyle=ph>.02?"rgba(255,40,80,.45)":c.started!==undefined?"rgba(255,200,40,.35)":"rgba(255,80,80,.2)";
+    g.fillRect(c.x-2,Y(c.y+c.h+18),c.w+4,c.h+36);
+  }
+  for(const p of s.platforms){
+    if(!p.meme||gone(p,s))continue;
+    const b=body(p,s.time);
+    g.strokeStyle="#7CFFB2"; g.lineWidth=2; g.strokeRect(b.x,Y(b.y+b.h),b.w,b.h);
+    g.fillStyle="#7CFFB2"; g.font="800 10px sans-serif"; g.fillText(p.meme,b.x,Y(b.y+b.h)-4);
+    const ht=hat(p,s.time);
+    if(ht){g.fillStyle="rgba(255,80,180,.45)"; g.fillRect(ht.x,Y(ht.y+ht.h),ht.w,ht.h); g.fillStyle="#ff7ad9"; g.fillText("HAT",ht.x,Y(ht.y+ht.h)-2)}
+  }
+  if(P){g.fillStyle="#ffe085"; g.beginPath(); g.arc(P.aim,Y(s.y)-8,6,0,7); g.fill()}
 }
 
 const bar=document.createElement("div");
@@ -152,13 +199,14 @@ const id=setInterval(()=>{
   const s=S.current;
   if(!s.alive||s.time<.05){dirHold(0);P=null;hl=-1;bar.textContent=V+" press Start  "+Math.max(0,Math.floor((s.peak-80)*3))+"m";bar.style.background="#ffe085";return}
   if(!P||s.highestLanding>hl+1){hl=s.highestLanding;P=think(snap(s))}
-  const d=s.x<P.aim-6?1:s.x>P.aim+6?-1:0;
+  const d=steer(s,P.aim);
   dirHold(d);
   if(P.b&&s.boost&&s.vy<90){tapBoost(s);P.b=false}
-  bar.style.background=P.ok?"#7CFFB2":"#ffd36a";
-  bar.textContent=V+" L"+P.id+(P.ok?"":"!")+(P.nxt?"":"?")+" "+(d>0?">":d<0?"<":".")+(P.b?" B":"")+"  "+Math.max(0,Math.floor((s.peak-80)*3))+"m";
+  overlay(s);
+  bar.style.background=P.ok?(P.same?"#9dffa8":"#7CFFB2"):"#ffd36a";
+  bar.textContent=V+" "+(P.same?"UP":"ZZ")+" L"+P.id+(P.ok?"":"!")+(P.nxt?"":"?")+" "+(d>0?">":d<0?"<":".")+(P.b?" B":"")+"  "+Math.max(0,Math.floor((s.peak-80)*3))+"m";
 },8);
-window.__rbStop=()=>{clearInterval(id);dirHold(0);bar.remove();window.__rbStop=null;window.__rb=0};
+window.__rbStop=()=>{clearInterval(id);dirHold(0);bar.remove();const ov=document.getElementById("rbov");if(ov)ov.remove();window.__rbStop=null;window.__rb=0};
 window.addEventListener("keydown",e=>{if(e.code==="F2"&&window.__rbStop)window.__rbStop()});
 alert(V+" ON");
 })();
