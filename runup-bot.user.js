@@ -1,17 +1,17 @@
 (()=>{if(window.__rbStop)try{window.__rbStop()}catch(e){}
-window.__rb=27;
-const V="v27",DT=1/120,MEMES=["Doge","WIF","Fwog","Benny"];
+window.__rb=25;
+const V="v25",DT=1/120,MEMES=["Doge","WIF","Fwog","Benny"];
 let S=null,I=null,H=99,P=null,hl=-1;
 const isS=v=>v&&v.platforms&&v.candles&&typeof v.alive=="boolean"&&"highestLanding"in v;
 const isI=v=>v&&typeof v.left=="boolean"&&typeof v.right=="boolean"&&!Array.isArray(v);
-function fibers(el){if(!el)return[];const o=[];for(const k of Object.keys(el))if(k.startsWith("__reactFiber")||k.startsWith("__reactContainer")||k.startsWith("__reactInternalInstance")){o.push(el[k]);if(el[k]&&el[k]._internalRoot)o.push(el[k]._internalRoot.current)}return o}
+function fibers(el){if(!el)return[];const o=[];for(const k of Object.keys(el))if(k.startsWith("__reactFiber")k.startsWith("__reactContainer")||k.startsWith("__reactInternalInstance")){o.push(el[k]);if(el[k]&&el[k]._internalRoot)o.push(el[k]._internalRoot.current)}return o}
 function find(){
   const g={},q=fibers(document.getElementById("climb-stage")).concat(fibers(document.getElementById("root"))),seen=new Set();
   document.querySelectorAll("canvas").forEach(c=>{fibers(c).forEach(f=>q.push(f));if(c.parentElement)fibers(c.parentElement).forEach(f=>q.push(f))});
   let n=0;while(q.length&&n++<8e3){const f=q.pop();if(!f||typeof f!="object"||seen.has(f))continue;seen.add(f);
     let h=f.memoizedState,i=0;while(h&&i++<90){const v=h.memoizedState;if(v&&typeof v=="object"){if(isS(v)&&(!g.s||v.time>=(g.s.time||0)))g.s=v;if(isI(v))g.i=v;if(v.current&&isS(v.current)&&(!g.sr||v.current.time>=((g.sr.current&&g.sr.current.time)||0)))g.sr=v;if(v.current&&isI(v.current))g.ir=v}h=h.next}
     if(f.return)q.push(f.return);if(f.child)q.push(f.child);if(f.sibling)q.push(f.sibling)}
-  S=g.sr||(g.s?{current:g.s}:S);I=g.ir||(g.i?{current:g.i}:I);
+  S=g.sr(g.s?{current:g.s}:S);I=g.ir||(g.i?{current:g.i}:I);
 }
 function key(t,c,k){const e=new KeyboardEvent(t,{key:c,code:c,keyCode:k,which:k,bubbles:!0,cancelable:!0});window.dispatchEvent(e);document.dispatchEvent(e);const st=document.getElementById("climb-stage");if(st)st.dispatchEvent(e)}
 function dirHold(d){if(I&&I.current){I.current.left=d===-1;I.current.right=d===1}if(d!==H){if(H<0)key("keyup","ArrowLeft",37);if(H>0)key("keyup","ArrowRight",39);H=d}if(d<0)key("keydown","ArrowLeft",37);if(d>0)key("keydown","ArrowRight",39)}
@@ -38,7 +38,7 @@ function gone(p,st){return !!(p.gone||(p.crackedAt!==undefined&&st.time-p.cracke
 function dia(p){return p.x+p.w*(p.meme?.74:.5)}
 function body(p,t){const o=(t+Math.abs(p.id)*.19)%2.6,hop=p.meme==="Fwog"?Math.max(0,Math.sin(o/2.6*Math.PI*2)):0,dog=p.meme==="Doge"?Math.sin(t*1.8+p.id)*7:0;return{x:p.x+5+hop*17+dog,y:p.y+hop*37,w:27,h:29}}
 function hat(p,t){if(p.meme!=="WIF")return null;const o=(t+Math.abs(p.id)*.13)%3.6;if(o<1.2||o>2.7)return null;const i=(o-1.2)/1.5,d=p.x>210?-1:1;return{x:p.x+10+d*i*90,y:p.y+40+Math.sin(i*Math.PI)*30,w:25,h:15}}
-function hits(st,x,y,w,h){return st.x+12>x&&st.x-12<x+w&&st.y+37>y&&st.y+3<y+h}
+[01/07/1405 00:39] R: function hits(st,x,y,w,h){return st.x+12>x&&st.x-12<x+w&&st.y+37>y&&st.y+3<y+h}
 function clone(st){return{...st,platforms:st.platforms.map(p=>({...p})),candles:st.candles.map(c=>({...c}))}}
 function tick(st,dir,doB){
   if(!st.alive)return;
@@ -52,8 +52,8 @@ function tick(st,dir,doB){
   for(const c of st.candles)if(c.started===undefined&&st.y>c.y-155&&st.y<c.y+c.h+75)c.started=st.time;
   st.x=Math.max(19,Math.min(401,st.x+dir*255*DT));if(dir)st.facing=dir;
   st.vy-=1700*DT;st.y+=st.vy*DT;
-  for(const c of st.candles){const g=cphase(c,st.time);if(g>.02&&(hits(st,c.x,c.y,c.w,c.h*g)||hits(st,c.x+c.w/2-3,c.y-9*g,6,(c.h+23)*g))){st.alive=false;st.reason="candle";return}}
-  for(const p of st.platforms)if(!gone(p,st)&&p.meme){const b=body(p,st.time),h=hat(p,st.time);if(hits(st,b.x,b.y,b.w,b.h)||(h&&hits(st,h.x,h.y,h.w,h.h))){st.alive=false;st.reason=h&&hits(st,h.x,h.y,h.w,h.h)?"hat":p.meme;return}}
+  for(const c of st.candles){const g=cphase(c,st.time);if(g>.02&&(hits(st,c.x,c.y,c.w,c.h*g)hits(st,c.x+c.w/2-3,c.y-9*g,6,(c.h+23)*g))){st.alive=false;st.reason="candle";return}}
+  for(const p of st.platforms)if(!gone(p,st)&&p.meme){const b=body(p,st.time),h=hat(p,st.time);if(hits(st,b.x,b.y,b.w,b.h)(h&&hits(st,h.x,h.y,h.w,h.h))){st.alive=false;st.reason=h&&hits(st,h.x,h.y,h.w,h.h)?"hat":p.meme;return}}
   const land=st.vy<0?st.platforms.filter(p=>!gone(p,st)&&y0>=p.y&&st.y<=p.y&&st.x+11>p.x&&st.x-11<p.x+p.w).sort((a,b)=>b.y-a.y)[0]:undefined;
   if(land){const perfect=land.y>st.highestLanding+1&&Math.abs(st.x-dia(land))<=12;st.combo=perfect?st.combo+1:0;st.bestCombo=Math.max(st.bestCombo,st.combo);st.highestLanding=Math.max(st.highestLanding,land.y);const sup=perfect&&st.combo%5===0;st.y=land.y;st.vy=sup?1060:land.green?875:ph==="bull"?760:640;st.boost=true;st.landings++;if(land.kind==="crumble")land.crackedAt??=st.time;if(sup)st.supers++;st._landed=land}else st._landed=null;
   st.peak=Math.max(st.peak,st.y);st.camera=Math.max(st.camera,st.y-st.viewHeight*.48);
@@ -79,23 +79,7 @@ function flee(s){
   }
   return 0;
 }
-function destHasCandle(st,p){
-  if(st.candles.some(z=>z.owner===p.id))return 1;
-  for(const k of st.candles){
-    const o=st.platforms.find(z=>z.id===k.owner); if(!o||o.id===p.id)continue;
-    if(o.y>=p.y-20&&o.y<=p.y+140)return 1;
-  }
-  return 0;
-}
-function innerEdge(cur,dest,t){const cx=px(cur,t),dx=px(dest,t);return dx>cx?cx+cur.w-16:cx+16}
-function steer(s,aim,edge){
-  const f=flee(s); if(f) return f;
-  if(edge!=null&&s.vy>40){
-    const passed=aim>edge?s.x>=edge-3:s.x<=edge+3;
-    if(!passed) return s.x<edge-5?1:s.x>edge+5?-1:0;
-  }
-  return s.x<aim-5?1:s.x>aim+5?-1:0;
-}
+function steer(s,aim){const f=flee(s); if(f) return f; return s.x<aim-5?1:s.x>aim+5?-1:0}
 function safeAims(st,p){
   const x=px(p,st.time),w=p.w,c=st.candles.find(z=>z.owner===p.id);
   let lo=x+16,hi=x+w-16,aims=[],walls=[];
@@ -118,17 +102,17 @@ function safeAims(st,p){
     for(const [a,b] of segs){
       if(b<wl||a>wr)next.push([a,b]);
       else{if(a<wl)next.push([a,Math.min(b,wl)]);if(b>wr)next.push([Math.max(a,wr),b])}
-    }
+[01/07/1405 00:39] R: }
     segs=next.filter(s=>s[1]-s[0]>=12);
   }
   for(const [a,b] of segs){aims.push((a+b)/2);if(b-a>18){aims.push(a+7);aims.push(b-7)}}
   if(!aims.length)aims.push(c&&c.x<x+w*.5?x+w-20:x+20);
   return[...new Set(aims.map(v=>Math.round(Math.max(22,Math.min(398,v)))))];
 }
-function simJump(st,aim,useB,edge){
+function simJump(st,aim,useB){
   const s=clone(st),hl0=s.highestLanding;let used=0;
   for(let i=0;i<260;i++){
-    const d=steer(s,aim,edge);
+    const d=steer(s,aim);
     const doB=useB&&!used&&s.boost&&s.vy<90; if(doB)used=1;
     tick(s,d,doB);
     if(!s.alive)return{ok:0,reason:s.reason,s,y:s.y};
@@ -140,12 +124,10 @@ function simJump(st,aim,useB,edge){
   return{ok:0,reason:"air",s,y:s.y};
 }
 function nextOk(st){
-  const cur=st.platforms.find(p=>!p.green&&Math.abs(p.y-st.highestLanding)<3);
   const L=st.platforms.filter(p=>!p.green&&!gone(p,st)&&p.y>st.highestLanding+1).sort((a,b)=>a.y-b.y);
   for(let i=0;i<Math.min(2,L.length);i++){
-    const edge=(destHasCandle(st,L[i])&&cur)?innerEdge(cur,L[i],st.time):null;
     for(const aim of safeAims(st,L[i]).slice(0,2)){
-      for(const b of[0,1]){if(simJump(st,aim,!!b,edge).ok)return 1}
+      for(const b of[0,1]){if(simJump(st,aim,!!b).ok)return 1}
     }
   }
   return 0;
@@ -154,29 +136,23 @@ function think(st){
   const L=st.platforms.filter(p=>!p.green&&!gone(p,st)&&p.y>st.highestLanding+1).sort((a,b)=>a.y-b.y);
   let best=null,bestN=null;
   const cur=st.platforms.find(p=>!p.green&&Math.abs(p.y-st.highestLanding)<3);
-  const crumbling=!!(cur&&(cur.kind==="crumble"||cur.crackedAt!==undefined));
+  const crumbling=!!(cur&&cur.kind==="crumble");
   const cx=cur?px(cur,st.time):st.x;
-  const opp=L.find(p=>cur&&(px(p,st.time)>160)!==(cx>160));
   for(let i=0;i<Math.min(3,L.length);i++){
     const p=L[i]; if(crumbling&&p===cur)continue;
     const same=cur?((px(p,st.time)>160)===(cx>160)):false;
-    if(crumbling&&same&&!opp){ /* no opposite rock — UP only if it actually lands */ }
-    const edge=(destHasCandle(st,p)&&cur)?innerEdge(cur,p,st.time):null;
     for(const aim of safeAims(st,p)){
       for(const b of[0,1]){
-        const r=simJump(st,aim,!!b,edge);
-        const landedHere=!!(r.ok&&r.land&&r.land.id===p.id);
-        if(crumbling&&!landedHere) continue;
-        if(crumbling&&same&&opp&&!landedHere) continue;
+        const r=simJump(st,aim,!!b);
         const nxt=r.ok&&nextOk(r.s)?1:0;
         const sc=(r.ok?1e7:0)+nxt*8e6+(same?6e5:0)+(r.land?r.land.y:0)*8+r.y-i*50-(b?25:0);
-        const row={sc,aim,b:!!b,id:p.id,ok:r.ok,nxt,reason:r.reason,same,edge};
+        const row={sc,aim,b:!!b,id:p.id,ok:r.ok,nxt,reason:r.reason,same};
         if(!best||sc>best.sc)best=row;
         if(r.ok&&nxt&&(!bestN||sc>bestN.sc))bestN=row;
       }
     }
   }
-  return bestN||best||{aim:st.x,b:false,id:"?",ok:0,nxt:0,reason:"none",edge:null};
+  return bestN||best||{aim:st.x,b:false,id:"?",ok:0,nxt:0,reason:"none"};
 }
 function snap(s){
   return{
@@ -209,8 +185,7 @@ function overlay(s){
   }
   if(P){g.fillStyle="#ffe085"; g.beginPath(); g.arc(P.aim,Y(s.y)-8,6,0,7); g.fill()}
 }
-
-const bar=document.createElement("div");
+[01/07/1405 00:39] R: const bar=document.createElement("div");
 bar.id="rbbar";
 bar.style.cssText="position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:2147483647;background:#7CFFB2;color:#111;padding:10px 16px;border-radius:12px;font:800 14px sans-serif;cursor:pointer";
 bar.textContent=V+" ON â€” click mountain, then Start";
@@ -223,7 +198,7 @@ const id=setInterval(()=>{
   const s=S.current;
   if(!s.alive||s.time<.05){dirHold(0);P=null;hl=-1;bar.textContent=V+" press Start  "+Math.max(0,Math.floor((s.peak-80)*3))+"m";bar.style.background="#ffe085";return}
   if(!P||s.highestLanding>hl+1){hl=s.highestLanding;P=think(snap(s))}
-  const d=steer(s,P.aim,P.edge);
+  const d=steer(s,P.aim);
   dirHold(d);
   if(P.b&&s.boost&&s.vy<90){tapBoost(s);P.b=false}
   overlay(s);
