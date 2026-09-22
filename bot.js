@@ -1,6 +1,6 @@
 (()=>{if(window.__rbStop)try{window.__rbStop()}catch(e){}
-window.__rb=26;
-const V="v26",DT=1/120,MEMES=["Doge","WIF","Fwog","Benny"];
+window.__rb=27;
+const V="v27",DT=1/120,MEMES=["Doge","WIF","Fwog","Benny"];
 let S=null,I=null,H=99,P=null,hl=-1;
 const isS=v=>v&&v.platforms&&v.candles&&typeof v.alive=="boolean"&&"highestLanding"in v;
 const isI=v=>v&&typeof v.left=="boolean"&&typeof v.right=="boolean"&&!Array.isArray(v);
@@ -79,7 +79,23 @@ function flee(s){
   }
   return 0;
 }
-function steer(s,aim){const f=flee(s); if(f) return f; return s.x<aim-5?1:s.x>aim+5?-1:0}
+function destHasCandle(st,p){
+  if(st.candles.some(z=>z.owner===p.id))return 1;
+  for(const k of st.candles){
+    const o=st.platforms.find(z=>z.id===k.owner); if(!o||o.id===p.id)continue;
+    if(o.y>=p.y-20&&o.y<=p.y+140)return 1;
+  }
+  return 0;
+}
+function innerEdge(cur,dest,t){const cx=px(cur,t),dx=px(dest,t);return dx>cx?cx+cur.w-16:cx+16}
+function steer(s,aim,edge){
+  const f=flee(s); if(f) return f;
+  if(edge!=null&&s.vy>40){
+    const passed=aim>edge?s.x>=edge-3:s.x<=edge+3;
+    if(!passed) return s.x<edge-5?1:s.x>edge+5?-1:0;
+  }
+  return s.x<aim-5?1:s.x>aim+5?-1:0;
+}
 function safeAims(st,p){
   const x=px(p,st.time),w=p.w,c=st.candles.find(z=>z.owner===p.id);
   let lo=x+16,hi=x+w-16,aims=[],walls=[];
@@ -109,10 +125,10 @@ function safeAims(st,p){
   if(!aims.length)aims.push(c&&c.x<x+w*.5?x+w-20:x+20);
   return[...new Set(aims.map(v=>Math.round(Math.max(22,Math.min(398,v)))))];
 }
-function simJump(st,aim,useB){
+function simJump(st,aim,useB,edge){
   const s=clone(st),hl0=s.highestLanding;let used=0;
   for(let i=0;i<260;i++){
-    const d=steer(s,aim);
+    const d=steer(s,aim,edge);
     const doB=useB&&!used&&s.boost&&s.vy<90; if(doB)used=1;
     tick(s,d,doB);
     if(!s.alive)return{ok:0,reason:s.reason,s,y:s.y};
@@ -124,10 +140,12 @@ function simJump(st,aim,useB){
   return{ok:0,reason:"air",s,y:s.y};
 }
 function nextOk(st){
+  const cur=st.platforms.find(p=>!p.green&&Math.abs(p.y-st.highestLanding)<3);
   const L=st.platforms.filter(p=>!p.green&&!gone(p,st)&&p.y>st.highestLanding+1).sort((a,b)=>a.y-b.y);
   for(let i=0;i<Math.min(2,L.length);i++){
+    const edge=(destHasCandle(st,L[i])&&cur)?innerEdge(cur,L[i],st.time):null;
     for(const aim of safeAims(st,L[i]).slice(0,2)){
-      for(const b of[0,1]){if(simJump(st,aim,!!b).ok)return 1}
+      for(const b of[0,1]){if(simJump(st,aim,!!b,edge).ok)return 1}
     }
   }
   return 0;
@@ -143,21 +161,22 @@ function think(st){
     const p=L[i]; if(crumbling&&p===cur)continue;
     const same=cur?((px(p,st.time)>160)===(cx>160)):false;
     if(crumbling&&same&&!opp){ /* no opposite rock — UP only if it actually lands */ }
+    const edge=(destHasCandle(st,p)&&cur)?innerEdge(cur,p,st.time):null;
     for(const aim of safeAims(st,p)){
       for(const b of[0,1]){
-        const r=simJump(st,aim,!!b);
+        const r=simJump(st,aim,!!b,edge);
         const landedHere=!!(r.ok&&r.land&&r.land.id===p.id);
         if(crumbling&&!landedHere) continue;
         if(crumbling&&same&&opp&&!landedHere) continue;
         const nxt=r.ok&&nextOk(r.s)?1:0;
         const sc=(r.ok?1e7:0)+nxt*8e6+(same?6e5:0)+(r.land?r.land.y:0)*8+r.y-i*50-(b?25:0);
-        const row={sc,aim,b:!!b,id:p.id,ok:r.ok,nxt,reason:r.reason,same};
+        const row={sc,aim,b:!!b,id:p.id,ok:r.ok,nxt,reason:r.reason,same,edge};
         if(!best||sc>best.sc)best=row;
         if(r.ok&&nxt&&(!bestN||sc>bestN.sc))bestN=row;
       }
     }
   }
-  return bestN||best||{aim:st.x,b:false,id:"?",ok:0,nxt:0,reason:"none"};
+  return bestN||best||{aim:st.x,b:false,id:"?",ok:0,nxt:0,reason:"none",edge:null};
 }
 function snap(s){
   return{
@@ -204,7 +223,7 @@ const id=setInterval(()=>{
   const s=S.current;
   if(!s.alive||s.time<.05){dirHold(0);P=null;hl=-1;bar.textContent=V+" press Start  "+Math.max(0,Math.floor((s.peak-80)*3))+"m";bar.style.background="#ffe085";return}
   if(!P||s.highestLanding>hl+1){hl=s.highestLanding;P=think(snap(s))}
-  const d=steer(s,P.aim);
+  const d=steer(s,P.aim,P.edge);
   dirHold(d);
   if(P.b&&s.boost&&s.vy<90){tapBoost(s);P.b=false}
   overlay(s);
