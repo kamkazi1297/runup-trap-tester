@@ -1,6 +1,6 @@
 (()=>{if(window.__rbStop)try{window.__rbStop()}catch(e){}
-window.__rb=25;
-const V="v25",DT=1/120,MEMES=["Doge","WIF","Fwog","Benny"];
+window.__rb=28;
+const V="v28",DT=1/120,MEMES=["Doge","WIF","Fwog","Benny"];
 let S=null,I=null,H=99,P=null,hl=-1;
 const isS=v=>v&&v.platforms&&v.candles&&typeof v.alive=="boolean"&&"highestLanding"in v;
 const isI=v=>v&&typeof v.left=="boolean"&&typeof v.right=="boolean"&&!Array.isArray(v);
@@ -52,7 +52,7 @@ function tick(st,dir,doB){
   for(const c of st.candles)if(c.started===undefined&&st.y>c.y-155&&st.y<c.y+c.h+75)c.started=st.time;
   st.x=Math.max(19,Math.min(401,st.x+dir*255*DT));if(dir)st.facing=dir;
   st.vy-=1700*DT;st.y+=st.vy*DT;
-  for(const c of st.candles){const g=cphase(c,st.time);if(g>.02&&(hits(st,c.x,c.y,c.w,c.h*g)||hits(st,c.x+c.w/2-3,c.y-9*g,6,(c.h+23)*g))){st.alive=false;st.reason="candle";return}}
+  for(const c of st.candles){const P=12;if(hits(st,c.x-P,c.y-P,c.w+P*2,c.h+P*2)||hits(st,c.x+c.w/2-3-P,c.y-9-P,6+P*2,c.h+23+P*2)){st.alive=false;st.reason="candle";return}}
   for(const p of st.platforms)if(!gone(p,st)&&p.meme){const b=body(p,st.time),h=hat(p,st.time);if(hits(st,b.x,b.y,b.w,b.h)||(h&&hits(st,h.x,h.y,h.w,h.h))){st.alive=false;st.reason=h&&hits(st,h.x,h.y,h.w,h.h)?"hat":p.meme;return}}
   const land=st.vy<0?st.platforms.filter(p=>!gone(p,st)&&y0>=p.y&&st.y<=p.y&&st.x+11>p.x&&st.x-11<p.x+p.w).sort((a,b)=>b.y-a.y)[0]:undefined;
   if(land){const perfect=land.y>st.highestLanding+1&&Math.abs(st.x-dia(land))<=12;st.combo=perfect?st.combo+1:0;st.bestCombo=Math.max(st.bestCombo,st.combo);st.highestLanding=Math.max(st.highestLanding,land.y);const sup=perfect&&st.combo%5===0;st.y=land.y;st.vy=sup?1060:land.green?875:ph==="bull"?760:640;st.boost=true;st.landings++;if(land.kind==="crumble")land.crackedAt??=st.time;if(sup)st.supers++;st._landed=land}else st._landed=null;
@@ -64,9 +64,8 @@ function tick(st,dir,doB){
 function px(p,t){return p.kind==="moving"?(p.homeX??p.x)+Math.sin(t*1.5+p.id)*17:p.x}
 function flee(s){
   for(const c of s.candles){
-    const g=cphase(c,s.time); if(g<.02) continue;
-    if(s.y+37<c.y-8||s.y+3>c.y+c.h*g+8) continue;
-    if(s.x+16>c.x-10&&s.x-16<c.x+c.w+10) return s.x<c.x+c.w/2?-1:1;
+    if(s.y+37<c.y-14||s.y+3>c.y+c.h+14) continue;
+    if(s.x+16>c.x-18&&s.x-16<c.x+c.w+18) return s.x<c.x+c.w/2?-1:1;
   }
   for(const p of s.platforms)if(!gone(p,s)&&p.meme){
     const b=body(p,s.time),h=hat(p,s.time);
@@ -83,12 +82,12 @@ function steer(s,aim){const f=flee(s); if(f) return f; return s.x<aim-5?1:s.x>ai
 function safeAims(st,p){
   const x=px(p,st.time),w=p.w,c=st.candles.find(z=>z.owner===p.id);
   let lo=x+16,hi=x+w-16,aims=[],walls=[];
-  if(c)walls.push([c.x-16,c.x+c.w+16]);
+  if(c)walls.push([c.x-28,c.x+c.w+28]);
   for(const k of st.candles){
     if(k.owner===p.id)continue;
     const owner=st.platforms.find(z=>z.id===k.owner); if(!owner)continue;
     if(owner.y<p.y-20||owner.y>p.y+140)continue;
-    walls.push([k.x-14,k.x+k.w+14]);
+    walls.push([k.x-26,k.x+k.w+26]);
   }
   for(const g of st.platforms){
     if(!g.green||!g.meme||gone(g,st))continue;
@@ -138,14 +137,17 @@ function think(st){
   const cur=st.platforms.find(p=>!p.green&&Math.abs(p.y-st.highestLanding)<3);
   const crumbling=!!(cur&&cur.kind==="crumble");
   const cx=cur?px(cur,st.time):st.x;
+  const superNow=st.vy>=900;
   for(let i=0;i<Math.min(3,L.length);i++){
     const p=L[i]; if(crumbling&&p===cur)continue;
     const same=cur?((px(p,st.time)>160)===(cx>160)):false;
     for(const aim of safeAims(st,p)){
+      const ontoCrumble=p.kind==="crumble";
+      const close=p.y-st.highestLanding<170;
       for(const b of[0,1]){
         const r=simJump(st,aim,!!b);
         const nxt=r.ok&&nextOk(r.s)?1:0;
-        const sc=(r.ok?1e7:0)+nxt*8e6+(same?6e5:0)+(r.land?r.land.y:0)*8+r.y-i*50-(b?25:0);
+        const sc=(r.ok?1e7:0)+nxt*8e6+(same?6e5:0)+(r.land?r.land.y:0)*8+r.y-i*50-(b?25:0)-(superNow&&ontoCrumble&&close&&!crumbling?5e6:0);
         const row={sc,aim,b:!!b,id:p.id,ok:r.ok,nxt,reason:r.reason,same};
         if(!best||sc>best.sc)best=row;
         if(r.ok&&nxt&&(!bestN||sc>bestN.sc))bestN=row;
